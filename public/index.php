@@ -2,8 +2,11 @@
 
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../src/Repository/ProdutoRepository.php";
+require_once __DIR__ . "/../src/Service/ProdutoService.php";
+
 
 $produtoRepository = new ProdutoRepository($pdo);
+$produtoService = new ProdutoService($produtoRepository);
 
 /*Serve para avisar o navegador, aplicativo ou sistema que está recebendo a resposta 
 que o conteúdo enviado é um JSON.*/
@@ -13,13 +16,13 @@ header("Content-Type: application/json");
 $metodo = $_SERVER['REQUEST_METHOD'];
 
 //Condição aplicada ao que foi solicitado pelo cliente
-if ($metodo == "GET") {
+if ($metodo === "GET") {
 
     $produtos = $produtoRepository->listarTodos();
     
     echo json_encode($produtos);
 
-} elseif ($metodo == "POST") {
+} elseif ($metodo === "POST") {
     // -->file_get_contents<--função do PHP que “pega o conteúdo” de alguma coisa e te devolve como texto
     $corpo = file_get_contents("php://input");
     //decodifica os dados json para PHP
@@ -42,77 +45,75 @@ if ($metodo == "GET") {
         exit;
     }
 
-    $nome = trim($dados["nome"] ?? "");
+    //retorna o valor se não for null, se for null vai para validação
+    $nome = $dados["nome"] ?? null;
     $preco = $dados["preco"] ?? null;
     $quantidade = $dados["quantidade"] ?? null;
-
-    //Verifica se o campo nome está vazio. O === compara valor e tipo
-    if ($nome === "") {
-        //retorna um status http 400 (o cliente enviou algo inválido)
+    
+    //NOME
+    //Se estiver vazio, retorna o erro
+    if ($nome === null) {
         http_response_code(400);
-        echo json_encode(["erro"=>"Nome não pode estar vazio."]);
-
+        echo json_encode(["erro" => "Nome é obrigatório."]);
         exit;
-    } 
+    }
 
-    /*Validação do preço:
-      - obrigatório
-      - deve ser numérico
-      - deve ser maior que zero
-    */
+    //Verifica se é string
+    if (!is_string($nome)) {
+        http_response_code(400);
+        echo json_encode(["erro" => "Nome deve ser um texto."]);
+        exit;
+    }
+
+    //só após a validação executa o trim
+    $nome = trim($nome);
+
+    //PREÇO
+    //Validações com preço, não pode ser texto
     if ($preco === null) {
         http_response_code(400);
-        echo json_encode(["erro"=>"Preço é obrigatório."]);
-
+        echo json_encode(["erro" => "Preço é obrigatório."]);
         exit;
     }
 
-    if (!is_numeric($preco)) {
+    if (!is_int($preco) && !is_float($preco)) {
         http_response_code(400);
-        echo json_encode(["erro"=>"Preço deve ser numérico."]);
-
+        echo json_encode(["erro" => "Preço deve ser um número."]);
         exit;
     }
 
-    if ($preco <= 0) {
-        http_response_code(400);
-        echo json_encode(["erro"=>"Preço não pode ser 0 ou negativo."]);
-
-        exit;
-    }
-
-    /*Validação da quantidade:
-      - obrigatório
-      - deve ser numérico
-      - não deve ser menor que zero
-    */
+    //QUANTIDADE
+    //Validações com quantidade, não pode ser float
     if ($quantidade === null) {
         http_response_code(400);
-        echo json_encode(["erro"=>"Quantidade é obrigatória."]);
-
+        echo json_encode(["erro" => "Quantidade é obrigatória."]);
         exit;
     }
 
-    if (!is_numeric($quantidade)) {
+    if (!is_int($quantidade)) {
         http_response_code(400);
-        echo json_encode(["erro"=>"Quantidade deve ser númerica."]);
-
+        echo json_encode(["erro" => "Quantidade deve ser um número inteiro."]);
         exit;
     }
 
-    if ($quantidade < 0) {
-        http_response_code(400);
-        echo json_encode(["erro"=>"quantidade não deve ser negativa."]);
-
-        exit;
-    }
-
-    //chama a função criar do produto repository
-    $novoId = $produtoRepository->criar(
-        $nome,
-        $preco,
-        $quantidade
+    try {
+        //Valida os dados pelo produto service antes de criar no banco
+        $novoId = $produtoService->criar(
+            $nome,
+            $preco,
+            $quantidade
     );
+
+    } catch (Exception $erro) {
+
+        http_response_code(400);
+
+        echo json_encode([
+            "erro"=> $erro->getMessage()
+        ]);
+
+        exit;
+    }   
 
     //Cria o novo produto
     $novoProduto = [
@@ -129,9 +130,9 @@ if ($metodo == "GET") {
 
     echo json_encode($novoProduto); 
 
-} elseif ($metodo == "PATCH") {
+} elseif ($metodo === "PATCH") {
     echo json_encode(["mensagem" => "PATCH ainda não implementado"]);
 
-} elseif ($metodo == "DELETE") {
+} elseif ($metodo === "DELETE") {
     echo json_encode(["mensagem" => "DELETE ainda não implementado"]);
 }
