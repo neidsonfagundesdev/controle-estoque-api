@@ -1,29 +1,13 @@
 <?php
 
 require_once __DIR__ . "/../config/database.php";
+require_once __DIR__ . "/../src/Repository/ProdutoRepository.php";
+
+$produtoRepository = new ProdutoRepository($pdo);
 
 /*Serve para avisar o navegador, aplicativo ou sistema que está recebendo a resposta 
 que o conteúdo enviado é um JSON.*/
 header("Content-Type: application/json");
-
-$produtos = [
-    [
-        "id" => 1,
-        "nome" => "teclado",
-        "preco" => 200,
-        "quantidade" => 5
-    ],
-    [
-        "id" => 2,
-        "nome" => "mouse",
-        "preco" => 100,
-        "quantidade" => 10
-    ]
-
-];
-
-//transforam o array de produtos em json
-$resposta = json_encode($produtos);
 
 //Pega o método http utilizado na requisição (get, post, patch, delete)
 $metodo = $_SERVER['REQUEST_METHOD'];
@@ -31,12 +15,8 @@ $metodo = $_SERVER['REQUEST_METHOD'];
 //Condição aplicada ao que foi solicitado pelo cliente
 if ($metodo == "GET") {
 
-    $sql = "SELECT * FROM produtos";
-
-    $stmt = $pdo->query($sql);
-
-    $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    $produtos = $produtoRepository->listarTodos();
+    
     echo json_encode($produtos);
 
 } elseif ($metodo == "POST") {
@@ -127,25 +107,12 @@ if ($metodo == "GET") {
         exit;
     }
 
-    //Comando sql para inserção de dados
-    $sql = "INSERT INTO produtos (nome, preco, quantidade)
-            VALUES ( :nome, :preco, :quantidade)";//espaço reservado para colocar valores com segurança
-    
-    /*prepare() é um método que envia o comando (molde SQL) ao banco 
-    o banco já sabe o que é comando. Os valores virão depois separados. Isso evita SQL Injection.*/
-    $stmt = $pdo->prepare($sql);
-
-    // execute() é um método que preenche o molde com os valores e manda o banco rodar.
-    // Os valores são tratados como dados, nunca como comando.
-    $stmt->execute([
-        "nome" => $nome,
-        "preco" => $preco,
-        "quantidade" => $quantidade
-    ]);
-
-    /*lastInsertId() é um método. Ele pergunta ao banco qual foi o ID 
-      gerado automaticamente pelo último INSERT feito nesta conexão.*/
-    $novoId = $pdo->lastInsertId();
+    //chama a função criar do produto repository
+    $novoId = $produtoRepository->criar(
+        $nome,
+        $preco,
+        $quantidade
+    );
 
     //Cria o novo produto
     $novoProduto = [
