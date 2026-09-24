@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/../config/database.php";
+
 /*Serve para avisar o navegador, aplicativo ou sistema que está recebendo a resposta 
 que o conteúdo enviado é um JSON.*/
 header("Content-Type: application/json");
@@ -28,7 +30,14 @@ $metodo = $_SERVER['REQUEST_METHOD'];
 
 //Condição aplicada ao que foi solicitado pelo cliente
 if ($metodo == "GET") {
-    echo $resposta;
+
+    $sql = "SELECT * FROM produtos";
+
+    $stmt = $pdo->query($sql);
+
+    $produtos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($produtos);
 
 } elseif ($metodo == "POST") {
     // -->file_get_contents<--função do PHP que “pega o conteúdo” de alguma coisa e te devolve como texto
@@ -46,6 +55,7 @@ if ($metodo == "GET") {
 
     //verifica se o JSON virou um array em PHP, caso contrario, dará erro 
     if (!is_array($dados)) {
+        //retorna um status http 400 (o cliente enviou algo inválido)
         http_response_code(400);
         echo json_encode(["erro"=>"O corpo da requisição deve ser um objeto JSON."]);
 
@@ -58,6 +68,7 @@ if ($metodo == "GET") {
 
     //Verifica se o campo nome está vazio. O === compara valor e tipo
     if ($nome === "") {
+        //retorna um status http 400 (o cliente enviou algo inválido)
         http_response_code(400);
         echo json_encode(["erro"=>"Nome não pode estar vazio."]);
 
@@ -90,10 +101,12 @@ if ($metodo == "GET") {
         exit;
     }
 
-    /*validação de $quantidade, se $quantidade for === (compara valor e tipo) null, 
-    ou se for -->NÃO númerico<-- ou menor que zero, vai dar erro*/
+    /*Validação da quantidade:
+      - obrigatório
+      - deve ser numérico
+      - não deve ser menor que zero
+    */
     if ($quantidade === null) {
-        //retorna um status http 400 (o cliente enviou algo inválido)
         http_response_code(400);
         echo json_encode(["erro"=>"Quantidade é obrigatória."]);
 
@@ -114,9 +127,27 @@ if ($metodo == "GET") {
         exit;
     }
 
-    $ids = array_column($produtos, "id");
-    $novoId = max($ids) + 1;
+    //Comando sql para inserção de dados
+    $sql = "INSERT INTO produtos (nome, preco, quantidade)
+            VALUES ( :nome, :preco, :quantidade)";//espaço reservado para colocar valores com segurança
+    
+    /*prepare() é um método que envia o comando (molde SQL) ao banco 
+    o banco já sabe o que é comando. Os valores virão depois separados. Isso evita SQL Injection.*/
+    $stmt = $pdo->prepare($sql);
 
+    // execute() é um método que preenche o molde com os valores e manda o banco rodar.
+    // Os valores são tratados como dados, nunca como comando.
+    $stmt->execute([
+        "nome" => $nome,
+        "preco" => $preco,
+        "quantidade" => $quantidade
+    ]);
+
+    /*lastInsertId() é um método. Ele pergunta ao banco qual foi o ID 
+      gerado automaticamente pelo último INSERT feito nesta conexão.*/
+    $novoId = $pdo->lastInsertId();
+
+    //Cria o novo produto
     $novoProduto = [
        
         "id" => $novoId ,
@@ -126,8 +157,6 @@ if ($metodo == "GET") {
 
     ];
 
-    $produtos[] = $novoProduto;
-    
     //retorna um status http 201 (algo foi criado)
     http_response_code(201);
 
