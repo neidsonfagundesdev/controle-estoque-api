@@ -33,4 +33,9 @@ class ProdutoService
             $quantidade
         );
     }
+
+    public function listarTodos(): array
+    {
+        return $this->repository->listarTodos();
+    }
 }
