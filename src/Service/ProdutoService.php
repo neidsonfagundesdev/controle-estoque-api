@@ -46,4 +46,45 @@ class ProdutoService
     {
         return $this->repository->buscarPorId($id);
     }
+
+    //Atualiza o dado no banco
+    public function atualizar(int $id, ?string $nome, int|float|null $preco, ?int $quantidade): ?array
+    {
+        $produto = $this->repository->buscarPorId($id);
+
+        if ($produto === null) {
+            return null;
+        }
+        //Coração do PATCH. Se chegou novo nome, use. Se não chegou, use o do banco mesmo.
+        $nomeAtualizado = $nome ?? $produto["nome"];
+        $precoAtualizado = $preco ?? (float) $produto["preco"];
+        $quantidadeAtualizada = $quantidade ?? (int) $produto["quantidade"];
+
+        if ($nomeAtualizado === "") {
+            throw new Exception ("Nome não pode estar vazio.");
+        }
+
+        if ($precoAtualizado <= 0) {
+            throw new Exception ("Preço deve ser maior do que zero.");
+        }
+
+        if ($quantidadeAtualizada < 0) {
+            throw new Exception ("Quantidade não pode ser negativa.");
+        }
+
+        $this->repository->atualizar(
+            $id,
+            $nomeAtualizado,
+            $precoAtualizado,
+            $quantidadeAtualizada
+        );
+
+        return [
+            "id" => $id,
+            "nome" => $nomeAtualizado,
+            "preco" => $precoAtualizado,
+            "quantidade" => $quantidadeAtualizada
+        ];
+    }
+
 }

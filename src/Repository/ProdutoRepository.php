@@ -60,5 +60,24 @@ class ProdutoRepository {
 
         return $produto === false ? null : $produto;
     }
+
+    public function atualizar(int $id, string $nome, float $preco, int $quantidade): bool
+    {
+        $sql = "UPDATE produtos 
+        SET nome = :nome, 
+            preco = :preco, 
+            quantidade = :quantidade 
+        WHERE id = :id";
+        
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute([
+            "id" => $id,
+            "nome" => $nome,
+            "preco" => $preco,
+            "quantidade" => $quantidade
+        ]);
+    }
+
 }
 

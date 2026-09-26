@@ -22,6 +22,7 @@ $rota = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 //
 $partes = explode("/", trim( $rota, "/"));
 
+//GET --> BUSCAR/LER
 //Condição aplicada ao que foi solicitado pelo cliente
 if ($metodo === "GET" && $partes[0] === "produtos" && count($partes) === 1) {
     $produtoController->listarTodos();
@@ -30,12 +31,16 @@ if ($metodo === "GET" && $partes[0] === "produtos" && count($partes) === 1) {
     $id = (int) $partes[1]; 
     $produtoController->buscarPorId($id);
 
+//POST --> CRIAR/ENVIAR
 } elseif ($metodo === "POST") {
     $produtoController->criar();
 
-} elseif ($metodo === "PATCH") {
-    echo json_encode(["mensagem" => "PATCH ainda não implementado"]);
+//PATCH --> ATUALIZAR UMA PARTE. MUDAR SÓ UM ITEM.
+} elseif ($metodo === "PATCH" && $partes[0] === "produtos" && count($partes) === 2 & ctype_digit($partes[1])) {
+    $id = (int) $partes[1];
+    $produtoController->atualizar($id);
 
+//DELE --> APAGAR
 } elseif ($metodo === "DELETE") {
     echo json_encode(["mensagem" => "DELETE ainda não implementado"]);
 }

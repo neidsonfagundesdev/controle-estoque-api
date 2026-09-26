@@ -139,6 +139,8 @@ class ProdutoController
         echo json_encode($produtos);
     }
 
+
+    //Busca pelo id
     public function buscarPorId(int $id): void
     {
         
@@ -155,6 +157,81 @@ class ProdutoController
         http_response_code(200);
 
         echo json_encode($produto);
+    }
+
+    //Lê o corpo da requisição, decodifica json e passa pela validação
+    public function atualizar(int $id): void
+    {
+        $corpo = file_get_contents("php://input");
+
+        $dados = json_decode($corpo, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            echo json_encode(["erro" => "JSON inválido."]);
+            exit;
+        }
+
+        if (!is_array($dados)) {
+            http_response_code(400);
+            echo json_encode(["erro" => "O corpo deve ser um objeto JSON."]);
+            exit;
+        }
+
+        $nome = $dados["nome"] ?? null;
+        $preco = $dados["preco"] ?? null;
+        $quantidade = $dados["quantidade"] ?? null;
+
+        //Validação dos campos que vieram no PATCH
+        //NOME
+        if ($nome !== null && !is_string($nome)) {
+            http_response_code(400);
+            echo json_encode(["erro" => "Nome deve ser um texto."]);
+            exit;
+        }
+
+        if ($nome !== null) {
+            $nome = trim($nome);
+        }
+
+        //PREÇO
+        if ($preco !== null && !is_int($preco) && !is_float($preco)) {
+            http_response_code(400);
+            echo json_encode(["erro" => "Preço deve ser um número."]);
+            exit;
+        }
+
+        //QUANTIDADE
+        if ($quantidade !== null && !is_int($quantidade)) {
+            http_response_code(400);
+            echo json_encode(["erro" => "Quantidade deve ser um número inteiro."]);
+            exit;
+        }
+
+        try {
+            $produtoAtualizado = $this->service->atualizar(
+                $id,
+                $nome,
+                $preco,
+                $quantidade
+            );
+
+            if ($produtoAtualizado === null) {
+                http_response_code(404);
+                echo json_encode(["erro" => "Produto não encontrado."]);
+                exit;
+            }
+
+            http_response_code(200);
+
+            echo json_encode([$produtoAtualizado]);
+            
+        } catch (Exception $erro) {
+            http_response_code(400);
+            echo json_encode(["erro" => $erro->getMessage()]);
+            exit;
+        }
+
     }
 
 }
