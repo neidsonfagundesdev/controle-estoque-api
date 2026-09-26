@@ -32,15 +32,16 @@ if ($metodo === "GET" && $partes[0] === "produtos" && count($partes) === 1) {
     $produtoController->buscarPorId($id);
 
 //POST --> CRIAR/ENVIAR
-} elseif ($metodo === "POST") {
+} elseif ($metodo === "POST" && $partes[0] === "produtos" && count($partes) === 1) {
     $produtoController->criar();
 
 //PATCH --> ATUALIZAR UMA PARTE. MUDAR SÓ UM ITEM.
-} elseif ($metodo === "PATCH" && $partes[0] === "produtos" && count($partes) === 2 & ctype_digit($partes[1])) {
+} elseif ($metodo === "PATCH" && $partes[0] === "produtos" && count($partes) === 2 && ctype_digit($partes[1])) {
     $id = (int) $partes[1];
     $produtoController->atualizar($id);
 
 //DELE --> APAGAR
-} elseif ($metodo === "DELETE") {
-    echo json_encode(["mensagem" => "DELETE ainda não implementado"]);
+} elseif ($metodo === "DELETE" && $partes[0] === "produtos" && count($partes) === 2 && ctype_digit($partes[1])) {
+    $id = (int) $partes[1];
+    $produtoController->excluir($id);
 }

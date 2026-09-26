@@ -224,14 +224,27 @@ class ProdutoController
 
             http_response_code(200);
 
-            echo json_encode([$produtoAtualizado]);
-            
+            echo json_encode($produtoAtualizado);
+
         } catch (Exception $erro) {
             http_response_code(400);
             echo json_encode(["erro" => $erro->getMessage()]);
             exit;
         }
 
+    }
+
+    public function excluir(int $id): void
+    {
+        $excluido = $this->service->excluir($id);
+
+        if (!$excluido) {
+            http_response_code(404);
+            echo json_encode(["erro" => "Produto não encontrado."]);
+            exit;
+        }
+        //204 - Significa que a operação deu certo, mas não tem o que devolver.
+        http_response_code(204);
     }
 
 }
