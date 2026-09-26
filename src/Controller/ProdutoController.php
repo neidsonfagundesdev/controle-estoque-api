@@ -139,4 +139,22 @@ class ProdutoController
         echo json_encode($produtos);
     }
 
+    public function buscarPorId(int $id): void
+    {
+        
+        $produto = $this->service->buscarPorId($id);
+
+        if ($produto === null) {
+            http_response_code(404);
+
+            echo json_encode(["erro" => "Produto não encontrado."]);
+
+            exit;
+        }
+
+        http_response_code(200);
+
+        echo json_encode($produto);
+    }
+
 }

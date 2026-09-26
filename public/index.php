@@ -16,9 +16,19 @@ header("Content-Type: application/json");
 //Pega o método http utilizado na requisição (get, post, patch, delete)
 $metodo = $_SERVER['REQUEST_METHOD'];
 
+//
+$rota = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+
+//
+$partes = explode("/", trim( $rota, "/"));
+
 //Condição aplicada ao que foi solicitado pelo cliente
-if ($metodo === "GET") {
+if ($metodo === "GET" && $partes[0] === "produtos" && count($partes) === 1) {
     $produtoController->listarTodos();
+
+} elseif ($metodo === "GET" && $partes[0] === "produtos" && count($partes) === 2 && ctype_digit($partes[1])) {
+    $id = (int) $partes[1]; 
+    $produtoController->buscarPorId($id);
 
 } elseif ($metodo === "POST") {
     $produtoController->criar();

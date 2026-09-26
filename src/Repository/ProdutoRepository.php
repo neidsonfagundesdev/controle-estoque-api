@@ -46,5 +46,19 @@ class ProdutoRepository {
         return (int) $novoId;
 
     }
+
+    //Busca o produto por id. No return existe um ternario que verifica se o produto foi achado pelo id, se não retorna null.
+    public function buscarPorId(int $id): ?array
+    {
+        $sql = "SELECT * FROM produtos WHERE id = :id";
+
+        $stmt = $this->pdo->prepare($sql);
+
+        $stmt->execute(["id" => $id]);
+
+        $produto = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $produto === false ? null : $produto;
+    }
 }
 

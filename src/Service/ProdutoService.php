@@ -13,6 +13,7 @@ class ProdutoService
         $this->repository = $repository;
     }
 
+    //Valida os dados do array recebido
     public function criar(string $nome, float $preco, int $quantidade): int
     {
         if ($nome === "") {
@@ -34,8 +35,15 @@ class ProdutoService
         );
     }
 
+    //lista todos os produtos
     public function listarTodos(): array
     {
         return $this->repository->listarTodos();
+    }
+
+    //busca o produto por id
+    public function buscarPorId(int $id): ?array
+    {
+        return $this->repository->buscarPorId($id);
     }
 }
