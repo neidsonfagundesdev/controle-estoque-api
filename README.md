@@ -89,7 +89,7 @@ quantidade	INT	Quantidade disponível
 
 Configuração
 Clone o repositório:
-git clone URL_DO_REPOSITORIO
+git clone https://github.com/neidsonfagundesdev/controle-estoque-api
 
 Entre na pasta do projeto:
 cd controle-de-estoque
