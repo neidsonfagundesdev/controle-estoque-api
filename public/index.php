@@ -44,4 +44,9 @@ if ($metodo === "GET" && $partes[0] === "produtos" && count($partes) === 1) {
 } elseif ($metodo === "DELETE" && $partes[0] === "produtos" && count($partes) === 2 && ctype_digit($partes[1])) {
     $id = (int) $partes[1];
     $produtoController->excluir($id);
+    
+//Caso o cliente solicite uma rota inexistente, retorna o erro.     
+} else {
+    http_response_code(404);
+    echo json_encode(["erro" => "Rota não encontrada."]);
 }
