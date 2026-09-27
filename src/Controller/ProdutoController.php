@@ -104,14 +104,17 @@ class ProdutoController
             $quantidade
     );
 
+    //Caso haja erro no banco de dados ou PDO, retorn status 500. 
+    //Primeiro verificamos o erro específico depois o erro genérico. 
+    } catch (PDOException $erro) {
+        http_response_code(500);
+        echo json_encode(["erro" => "Erro interno do servidor."]);
+        exit;
+
+    //Retorna erro pelas validações inválidas
     } catch (Exception $erro) {
-
         http_response_code(400);
-
-        echo json_encode([
-            "erro"=> $erro->getMessage()
-        ]);
-
+        echo json_encode(["erro"=> $erro->getMessage()]);
         exit;
     }
 
@@ -134,29 +137,43 @@ class ProdutoController
 
     public function listarTodos(): void
     {
-        $produtos = $this->service->listarTodos();
+        try {
+            $produtos = $this->service->listarTodos();
+            http_response_code(200);
+            echo json_encode($produtos);
 
-        echo json_encode($produtos);
+        //Caso o PDO falhe, retorna erro
+        } catch (PDOException $erro) {
+            http_response_code(500);
+            echo json_encode(["erro" => "Erro interno do Servidor."]);
+            exit;
+        }
+        
     }
 
 
     //Busca pelo id
     public function buscarPorId(int $id): void
     {
+        try {
+            $produto = $this->service->buscarPorId($id);
+
+            if ($produto === null) {
+                http_response_code(404);
+                echo json_encode(["erro" => "Produto não encontrado."]);
+                exit;
+            }
+
+            http_response_code(200);
+            echo json_encode($produto);
         
-        $produto = $this->service->buscarPorId($id);
-
-        if ($produto === null) {
-            http_response_code(404);
-
-            echo json_encode(["erro" => "Produto não encontrado."]);
-
+        //Caso haja falha no PDO, retorna erro
+        } catch (PDOException $erro) {
+            http_response_code(500);
+            echo json_encode(["erro" => "Erro interno do servidor."]);
             exit;
         }
-
-        http_response_code(200);
-
-        echo json_encode($produto);
+        
     }
 
     //Lê o corpo da requisição, decodifica json e passa pela validação
@@ -226,6 +243,11 @@ class ProdutoController
 
             echo json_encode($produtoAtualizado);
 
+        } catch (PDOException $erro) {
+            http_response_code(500);
+            echo json_encode(["erro" => "Erro interno do servidor."]);
+            exit;
+
         } catch (Exception $erro) {
             http_response_code(400);
             echo json_encode(["erro" => $erro->getMessage()]);
@@ -236,15 +258,23 @@ class ProdutoController
 
     public function excluir(int $id): void
     {
-        $excluido = $this->service->excluir($id);
+        try{
+            $excluido = $this->service->excluir($id);
 
-        if (!$excluido) {
-            http_response_code(404);
-            echo json_encode(["erro" => "Produto não encontrado."]);
+            if (!$excluido) {
+                http_response_code(404);
+                echo json_encode(["erro" => "Produto não encontrado."]);
+                exit;
+            }
+            //204 - Significa que a operação deu certo, mas não tem o que devolver.
+            http_response_code(204);
+
+        //Caso falhe o PDO, retorna erro
+        } catch (PDOException $erro) {
+            http_response_code(500);
+            echo json_encode(["erro" => "Erro interno do servidor."]);
             exit;
         }
-        //204 - Significa que a operação deu certo, mas não tem o que devolver.
-        http_response_code(204);
     }
 
 }
