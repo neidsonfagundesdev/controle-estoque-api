@@ -20,27 +20,35 @@ class ProdutoController
 
     public function criar(): void // void significa: essa função não devolve um valor com return; ela envia a resposta HTTP diretamente.
     {
-        // -->file_get_contents<--função do PHP que “pega o conteúdo” de alguma coisa e te devolve como texto
+    // -->file_get_contents<--função do PHP que “pega o conteúdo” de alguma coisa e te devolve como texto
     $corpo = file_get_contents("php://input");
-    //decodifica os dados json para PHP
-    $dados = json_decode($corpo, true);
 
-    //verifica se o json é válido
-    if (json_last_error() !== JSON_ERROR_NONE) {
+    //Tenta decodificar o JSON.
+    //JSON_THROW_ON_ERROR faz o json_decode() lançar uma exceção se o JSON estiver inválido.
+    //Se isso acontecer, o catch captura o erro e retorna status 400.
+    try {
+        $dadosObjeto = json_decode(
+            $corpo,
+            false,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+    } catch (JsonException $erro) {
         http_response_code(400);
-        echo json_encode(["erro"=>"JSON inválido."]);
+        echo json_encode(["erro" => "JSON inválido."]);
+        exit;
+}
 
+    //Depois verifica se relmente é um objeto JSON
+    if (!is_object($dadosObjeto)) {
+        http_response_code(400);
+        echo json_encode(["erro" => "O corpo deve ser um objeto JSON"]);
         exit;
     }
 
-    //verifica se o JSON virou um array em PHP, caso contrario, dará erro 
-    if (!is_array($dados)) {
-        //retorna um status http 400 (o cliente enviou algo inválido)
-        http_response_code(400);
-        echo json_encode(["erro"=>"O corpo da requisição deve ser um objeto JSON."]);
-
-        exit;
-    }
+    //Cast. Transforma o obejto em array PHP
+    $dados = (array) $dadosObjeto;
     
     //retorna o valor se não houver valor retorna null
     $nome = $dados["nome"] ?? null;
@@ -145,7 +153,7 @@ class ProdutoController
         //Caso o PDO falhe, retorna erro
         } catch (PDOException $erro) {
             http_response_code(500);
-            echo json_encode(["erro" => "Erro interno do Servidor."]);
+            echo json_encode(["erro" => "Erro interno do servidor."]);
             exit;
         }
         
@@ -179,25 +187,71 @@ class ProdutoController
     //Lê o corpo da requisição, decodifica json e passa pela validação
     public function atualizar(int $id): void
     {
+        //Lê o corpo da requisição
         $corpo = file_get_contents("php://input");
 
-        $dados = json_decode($corpo, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        //Tenta decodificar o JSON.
+        //JSON_THROW_ON_ERROR faz o json_decode() lançar uma exceção se o JSON estiver inválido.
+        //Se isso acontecer, o catch captura o erro e retorna status 400.
+        try {
+            $dadosObjeto = json_decode(
+                $corpo,
+                false,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+        
+        } catch (JsonException $erro) {
             http_response_code(400);
             echo json_encode(["erro" => "JSON inválido."]);
             exit;
         }
 
-        if (!is_array($dados)) {
+        //Depois verifica se realmente é um objeto JSON
+        if (!is_object($dadosObjeto)) {
             http_response_code(400);
             echo json_encode(["erro" => "O corpo deve ser um objeto JSON."]);
             exit;
         }
 
-        $nome = $dados["nome"] ?? null;
-        $preco = $dados["preco"] ?? null;
-        $quantidade = $dados["quantidade"] ?? null;
+        //Cast. Transforma objeto para array PHP
+        $dados = (array) $dadosObjeto;
+
+        //verifica se veio pelo menos um dos campos permitidos
+        //array_key_exists() --> verifica se uma chave existe em um array, retornando true ou false
+        if (
+            !array_key_exists("nome", $dados) &&
+            !array_key_exists("preco", $dados) &&
+            !array_key_exists("quantidade", $dados)
+            ) {
+                http_response_code(400);
+                echo json_encode(["erro" => "Nenhum campo válido foi informado para atualização."]);
+                exit;
+            }
+
+        //Ternário. Se "nome" existir em $dados, $nome recebe $dados["nome"]. Senão, $nome recebe null. 
+        $nome = array_key_exists("nome", $dados) ? $dados["nome"] : null;
+        $preco = array_key_exists("preco", $dados) ? $dados["preco"] : null;
+        $quantidade = array_key_exists("quantidade", $dados) ? $dados["quantidade"] : null;
+
+        //Valida os campos nulos
+        if (array_key_exists("nome", $dados) && $nome === null) {
+            http_response_code(400);
+            echo json_encode(["erro" => "Nome não pode ser nulo."]);
+            exit;
+        }
+        
+        if (array_key_exists("preco", $dados) && $preco === null) {
+            http_response_code(400);
+            echo json_encode(["erro" => "Preço não pode ser nulo."]);
+            exit;
+        }
+
+        if (array_key_exists("quantidade", $dados) && $quantidade === null) {
+            http_response_code(400);
+            echo json_encode(["erro" => "Quantidade não pode ser nula."]);
+            exit;
+        }
 
         //Validação dos campos que vieram no PATCH
         //NOME
