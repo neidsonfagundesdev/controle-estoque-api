@@ -95,7 +95,11 @@ class ProdutoService
             throw new Exception("Nome não pode estar vazio.");
         }
 
-        if (strlen($nome) > 150) {
+        /*usamos mb_strlen por que o strlen mede o tamanho em bytes 
+        um letra acentuda seria contada como 2 em UTF-8
+        mb_strlen() existe justamente para lidar com caracteres que
+        podem ocupar mais de um byte*/
+        if (mb_strlen($nome, "UTF-8") > 150) {
             throw new Exception("Nome deve ter no máximo 150 caracteres.");
         }
 
