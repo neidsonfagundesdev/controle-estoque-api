@@ -1,4 +1,3 @@
-````markdown
 # API RESTful - Controle de Estoque
 
 API RESTful desenvolvida em PHP para gerenciamento de produtos em estoque.
@@ -112,9 +111,35 @@ O banco possui a tabela `produtos` com os seguintes campos:
 
 Para executar o projeto localmente, é necessário ter:
 
+- PHP 8.0 ou superior
+- Extensão PHP `mbstring` habilitada
 - PHP com suporte ao PDO MySQL
 - MySQL ou MariaDB
 - Git, caso queira clonar o repositório
+
+### Habilitando a extensão mbstring
+
+A API utiliza `mb_strlen()` para contar corretamente caracteres UTF-8, incluindo letras acentuadas.
+
+No arquivo `php.ini`, verifique se a extensão `mbstring` está habilitada:
+
+```ini
+extension=mbstring
+```
+
+Caso a linha esteja assim:
+
+```ini
+;extension=mbstring
+```
+
+remova o `;`, salve o arquivo e reinicie o servidor PHP.
+
+Para confirmar se a extensão está carregada:
+
+```bash
+php -m
+```
 
 ## Configuração
 
@@ -194,8 +219,6 @@ Exemplo de resposta:
 ]
 ```
 
----
-
 ### Buscar produto por ID
 
 ```http
@@ -220,8 +243,6 @@ Caso o produto não exista:
     "erro": "Produto não encontrado."
 }
 ```
-
----
 
 ### Cadastrar produto
 
@@ -256,8 +277,6 @@ Status retornado:
 201 Created
 ```
 
----
-
 ### Atualizar produto
 
 ```http
@@ -286,8 +305,6 @@ Exemplo de resposta:
     "quantidade": 10
 }
 ```
-
----
 
 ### Excluir produto
 
@@ -328,19 +345,38 @@ Entre elas:
 - Nome não pode ser vazio
 - Nome deve ser texto
 - Nome deve possuir no máximo 150 caracteres
+- Caracteres UTF-8 são contabilizados corretamente
 - Preço deve ser numérico
-- Preço deve ser maior que zero
+- Preço deve ser no mínimo `0.01`
 - Preço deve possuir no máximo duas casas decimais
 - Preço deve respeitar o limite do campo `DECIMAL(10,2)`
+- Valores infinitos de preço são rejeitados
 - Quantidade deve ser um número inteiro
 - Quantidade não pode ser negativa
 - Quantidade deve respeitar o limite do campo `INT`
 - JSON inválido retorna erro `400`
-- Corpo da requisição deve ser um objeto JSON
+- Corpo de POST e PATCH deve ser um objeto JSON
+- PATCH deve possuir pelo menos um campo válido para atualização
 - Produto inexistente retorna erro `404`
 - Rotas inexistentes retornam erro `404`
 - Métodos HTTP não permitidos retornam erro `405`
 - Erros internos retornam erro `500`
+
+## Atualização parcial com PATCH
+
+O endpoint `PATCH` atualiza apenas os campos enviados na requisição.
+
+Por exemplo:
+
+```json
+{
+    "quantidade": 20
+}
+```
+
+Nesse caso, apenas a quantidade é alterada.
+
+Os campos `nome` e `preco` permanecem com seus valores atuais.
 
 ## Segurança
 
@@ -358,9 +394,39 @@ $stmt->execute([
 
 Isso evita concatenar diretamente os dados recebidos nas consultas SQL e ajuda na prevenção de SQL Injection.
 
+No `PATCH`, as colunas permitidas são definidas pela própria aplicação e os valores são enviados separadamente através dos parâmetros da consulta.
+
 As credenciais locais do banco também não são versionadas no Git.
 
-Erros internos da aplicação retornam mensagens genéricas ao cliente, evitando expor detalhes da conexão ou do banco de dados.
+Erros internos retornam mensagens genéricas ao cliente, evitando expor informações como SQL, credenciais, caminhos internos ou detalhes da conexão com o banco.
+
+## Tratamento de erros
+
+A API utiliza respostas JSON para informar erros ao cliente.
+
+Exemplo de dado inválido:
+
+```json
+{
+    "erro": "Preço deve ter no máximo 2 casas decimais."
+}
+```
+
+Exemplo de produto inexistente:
+
+```json
+{
+    "erro": "Produto não encontrado."
+}
+```
+
+Exemplo de erro interno:
+
+```json
+{
+    "erro": "Erro interno do servidor."
+}
+```
 
 ## Objetivo do projeto
 
@@ -375,6 +441,10 @@ Projeto desenvolvido para praticar conceitos de desenvolvimento back-end, inclui
 - PDO
 - MySQL
 - Prepared Statements
+- SQL Injection
+- Tratamento de erros
+- Validação de JSON
+- Codificação UTF-8
 - Separação de responsabilidades
 - Arquitetura Controller / Service / Repository
 - Git e versionamento de código
@@ -382,4 +452,3 @@ Projeto desenvolvido para praticar conceitos de desenvolvimento back-end, inclui
 ## Autor
 
 Desenvolvido por Neidson Fagundes como projeto de estudo e portfólio em desenvolvimento back-end.
-````
