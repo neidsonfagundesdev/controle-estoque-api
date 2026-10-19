@@ -74,12 +74,6 @@ class ProdutoService
     //Exclui um item pelo id
     public function excluir(int $id): bool
     {
-        $produto = $this->repository->buscarPorId($id);
-
-        if ($produto === null) {
-            return false;
-        }
-
         return $this->repository->excluir($id);
     }
 

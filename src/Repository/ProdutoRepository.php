@@ -104,7 +104,9 @@ class ProdutoRepository {
 
         $stmt = $this->pdo->prepare($sql);
 
-        return $stmt->execute(["id" => $id]);
+        $stmt->execute(["id" => $id]);
+
+        return $stmt->rowCount() > 0;
     }
 
 }
