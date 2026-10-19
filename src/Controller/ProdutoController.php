@@ -131,7 +131,7 @@ class ProdutoController
        
         "id" => $novoId ,
         "nome" => $nome,
-        "preco" => $preco,
+        "preco" => number_format($preco, 2, ".", ""),
         "quantidade" => $quantidade
 
     ];
