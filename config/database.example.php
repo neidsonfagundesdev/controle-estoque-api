@@ -16,6 +16,11 @@ try {
     );
 
 } catch (PDOException $erro) {//$erro variável que vai guardar os detalhes desse erro
+
+    /*Registra o erro internamente no log do servidor, 
+    evitando expor detalhes técnicos para o cliente da API.*/
+    error_log($erro->getMessage());
+
     http_response_code(500);
     /*
     garante que a resposta continue sendo JSON

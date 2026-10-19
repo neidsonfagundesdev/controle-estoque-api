@@ -115,6 +115,7 @@ class ProdutoController
     //Caso haja erro no banco de dados ou PDO, retorn status 500. 
     //Primeiro verificamos o erro específico depois o erro genérico. 
     } catch (PDOException $erro) {
+        error_log($erro->getMessage());
         http_response_code(500);
         echo json_encode(["erro" => "Erro interno do servidor."]);
         exit;
