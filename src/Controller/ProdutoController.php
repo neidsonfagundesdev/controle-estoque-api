@@ -153,6 +153,7 @@ class ProdutoController
 
         //Caso o PDO falhe, retorna erro
         } catch (PDOException $erro) {
+            error_log($erro->getMessage());
             http_response_code(500);
             echo json_encode(["erro" => "Erro interno do servidor."]);
             exit;
@@ -178,6 +179,7 @@ class ProdutoController
         
         //Caso haja falha no PDO, retorna erro
         } catch (PDOException $erro) {
+            error_log($erro->getMessage());
             http_response_code(500);
             echo json_encode(["erro" => "Erro interno do servidor."]);
             exit;
@@ -312,6 +314,7 @@ class ProdutoController
             echo json_encode($produtoAtualizado);
 
         } catch (PDOException $erro) {
+            error_log($erro->getMessage());
             http_response_code(500);
             echo json_encode(["erro" => "Erro interno do servidor."]);
             exit;
@@ -339,6 +342,7 @@ class ProdutoController
 
         //Caso falhe o PDO, retorna erro
         } catch (PDOException $erro) {
+            error_log($erro->getMessage());
             http_response_code(500);
             echo json_encode(["erro" => "Erro interno do servidor."]);
             exit;
