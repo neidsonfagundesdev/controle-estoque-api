@@ -105,8 +105,8 @@ class ProdutoService
     //valida o preço
     private function validarPreco(int|float $preco): void
     {
-        if ($preco <= 0) {
-            throw new Exception("Preço deve ser maior que zero.");
+        if ($preco < 0.01) {
+            throw new Exception("Preço deve ser no mínimo 0.01.");
         }
 
         //Evita números infinitos. is_finite verifica se o núemro é finito com !, o sisteam verifica se ele não é finito e retorna erro
@@ -119,20 +119,12 @@ class ProdutoService
             throw new Exception("Preço excede o limite permitido.");
         }
 
-        /* 
-        Multiplicamos o preço por 100 para verificar as casas decimais.
-        
-        --> round() arredonda o valor.
-        --> abs() pega apenas o tamanho da diferença entre o valor original
-        e o arredondado.
-
-        Como float pode ter pequenas imprecisões, aceitamos uma tolerância.
-        Se a diferença for maior que 0.000001,
-        o preço tem mais de 2 casas decimais.
+        /*
+        Exemplo: Se $preco for 10.555, o round() transforma em 10.56.
+        Como 10.555 é diferente de 10.56, o código entende que há mais de 
+        2 casas decimais e dispara o erro.
         */
-        $centavos = $preco * 100;
-
-        if (abs($centavos - round($centavos)) > 0.000001) {
+        if ($preco != round($preco, 2)) {
             throw new Exception("Preço deve ter no máximo 2 casas decimais.");
         }
     }
