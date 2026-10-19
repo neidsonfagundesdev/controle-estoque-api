@@ -44,7 +44,20 @@ if ($metodo === "GET" && $partes[0] === "produtos" && count($partes) === 1) {
 } elseif ($metodo === "DELETE" && $partes[0] === "produtos" && count($partes) === 2 && ctype_digit($partes[1])) {
     $id = (int) $partes[1];
     $produtoController->excluir($id);
-    
+
+//O header diz a quem chamou a API -> Você usou um método que não pode aqui
+// Depois mostra os métodos permitidos. 
+} elseif ($partes[0] === "produtos" && count($partes) === 1) {
+    http_response_code(405);
+    header("Allow: GET, POST");
+    echo json_encode(["erro" => "Método não permitido para esta rota."]);
+
+//Devolve os métodos permitidos. 
+} elseif ($partes[0] === "produtos" && count($partes) === 2 && ctype_digit($partes[1])) {
+    http_response_code(405);
+    header("Allow: GET, PATCH, DELETE");
+    echo json_encode(["erro" => "Método não permitido para esta rota."]);
+
 //Caso o cliente solicite uma rota inexistente, retorna o erro.     
 } else {
     http_response_code(404);
