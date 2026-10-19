@@ -17,52 +17,9 @@ class ProdutoService
     //API rejeita o dado antes do banco decidir o que fazer com ele
     public function criar(string $nome, float $preco, int $quantidade): int
     {
-        if ($nome === "") {
-            throw new Exception("Nome não pode estar vazio.");
-        }
-        //Verifica quantidade de caracteres
-        if (strlen($nome) > 150) {
-            throw new Exception("Nome deve ter no máximo 150 caracteres.");
-        }
-
-        if ($preco <= 0) {
-            throw new Exception("Preço deve ser maior que zero.");
-        }
-
-        //Evita números infinitos. is_finite verifica se o núemro é finito com !, o sisteam verifica se ele não é finito e retorna erro
-        if (!is_finite($preco)) {
-            throw new Exception("Preço inválido.");
-        }
-
-        //Impõe limite de preço e casas decimais
-        if ($preco > 99999999.99) {
-            throw new Exception("Preço excede o limite permitido.");
-        }
-
-        /* 
-        Multiplicamos o preço por 100 para verificar as casas decimais.
-        
-        --> round() arredonda o valor.
-        --> abs() pega apenas o tamanho da diferença entre o valor original
-        e o arredondado.
-
-        Como float pode ter pequenas imprecisões, aceitamos uma tolerância.
-        Se a diferença for maior que 0.000001,
-        o preço tem mais de 2 casas decimais.
-        */
-        $centavos = $preco * 100;
-
-        if (abs($centavos - round($centavos)) > 0.000001) {
-            throw new Exception("Preço deve ter no máximo 2 casas decimais.");
-        }
-
-        if ($quantidade < 0) {
-            throw new Exception("Quantidade não pode ser negativa.");
-        }
-        //Impõe limite máximo ao item quantidade
-        if ($quantidade > 2147483647) {
-            throw new Exception("Quantidade excede o limite permitido.");
-        }
+        $nome = $this->validarNome($nome);
+        $this->validarPreco($preco);
+        $this->validarQuantidade($quantidade);
 
         return $this->repository->criar(
             $nome,
@@ -95,54 +52,23 @@ class ProdutoService
         //Valida o nome
         if (array_key_exists("nome", $campos)) {
 
-            $campos["nome"] = trim($campos["nome"]);
-
-            if ($campos["nome"] === "") {
-            throw new Exception("Nome não pode estar vazio.");
-            }
-
-            if (strlen($campos["nome"]) > 150) {
-            throw new Exception("Nome deve ter no máximo 150 caracteres.");
-            }
+            $campos["nome"] = $this->validarNome($campos["nome"]);
         }
 
         //Valida o preço
         if (array_key_exists("preco", $campos)) {
-
-            if ($campos["preco"] <= 0) {
-                throw new Exception("Preço deve ser maior do que zero.");
-            }
-
-            if (!is_finite($campos["preco"])) {
-                throw new Exception("Preço inválido");
-            }
-
-            if ($campos["preco"] > 99999999.99) {
-                throw new Exception("Preço excede o limite permitido.");
-            }
-
-            $centavos = $campos["preco"] *100;
-
-            if (abs($centavos - round($centavos)) > 0.000001) {
-                throw new Exception("Preço deve ter no máximo 2 casas decimais.");
-            }
+            $this->validarPreco($campos["preco"]);
         }
 
         //Valida a quantidade
         if (array_key_exists("quantidade", $campos)) {
-            
-            if ($campos["quantidade"] < 0) {
-                throw new Exception("Quantidade não pode ser negativa.");
-            }
-
-            if ($campos["quantidade"] > 2147483647) {
-                throw new Exception("Quantidade excede o limite permitido.");
-            }
+            $this->validarQuantidade($campos["quantidade"]);
         }
 
         $this->repository->atualizar($id, $campos);
 
         return $this->repository->buscarPorId($id);
+        
     }
 
     //Exclui um item pelo id
@@ -155,6 +81,73 @@ class ProdutoService
         }
 
         return $this->repository->excluir($id);
+    }
+
+    //Métodos auxiliares privados.
+    //Eles vão evitar duplicações e possíveis erros futuros com atualizações
+
+    //valida o nome
+    private function validarNome(string $nome): string
+    {
+        $nome = trim($nome);
+
+        if ($nome === "") {
+            throw new Exception("Nome não pode estar vazio.");
+        }
+
+        if (strlen($nome) > 150) {
+            throw new Exception("Nome deve ter no máximo 150 caracteres.");
+        }
+
+        return $nome;
+    }
+
+    //valida o preço
+    private function validarPreco(int|float $preco): void
+    {
+        if ($preco <= 0) {
+            throw new Exception("Preço deve ser maior que zero.");
+        }
+
+        //Evita números infinitos. is_finite verifica se o núemro é finito com !, o sisteam verifica se ele não é finito e retorna erro
+        if (!is_finite($preco)) {
+            throw new Exception("Preço inválido");
+        }
+
+        //Imões limites de preço e casas decimais
+        if ($preco > 99999999.99) {
+            throw new Exception("Preço excede o limite permitido.");
+        }
+
+        /* 
+        Multiplicamos o preço por 100 para verificar as casas decimais.
+        
+        --> round() arredonda o valor.
+        --> abs() pega apenas o tamanho da diferença entre o valor original
+        e o arredondado.
+
+        Como float pode ter pequenas imprecisões, aceitamos uma tolerância.
+        Se a diferença for maior que 0.000001,
+        o preço tem mais de 2 casas decimais.
+        */
+        $centavos = $preco * 100;
+
+        if (abs($centavos - round($centavos)) > 0.000001) {
+            throw new Exception("Preço deve ter no máximo 2 casas decimais.");
+        }
+    }
+
+    //Valida a quantidade
+    private function validarQuantidade(int $quantidade): void
+    {
+        if ($quantidade < 0) {
+            throw new Exception("Quantidade não pode ser negativa.");
+        }
+
+        //Impõe limite máximo ao item quantidade
+        if ($quantidade > 2147483647) {
+            throw new Exception("Quantidade excede o limite permitido.");
+        }
     }
 
 }
