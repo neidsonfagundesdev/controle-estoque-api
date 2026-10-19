@@ -14,6 +14,14 @@ try {
         PDO::ATTR_ERRMODE,
         PDO::ERRMODE_EXCEPTION
     );
-} catch (PDOException $erro) {
-    die("Erro ao conectar ao banco.");
+
+} catch (PDOException $erro) {//$erro variável que vai guardar os detalhes desse erro
+    http_response_code(500);
+    /*
+    garante que a resposta continue sendo JSON
+    mesmo que a conexão falhe antes de o restante da API ser carregado.*/
+    header("Content-type: application/json");
+    echo json_encode(["erro" => "Erro interno do servidor."]);
+
+    exit;
 }
