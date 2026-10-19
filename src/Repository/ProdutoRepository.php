@@ -61,22 +61,41 @@ class ProdutoRepository {
         return $produto === false ? null : $produto;
     }
 
-    public function atualizar(int $id, string $nome, float $preco, int $quantidade): bool
+    //A função atualizar agora atualiza apenas o campo enviado
+    public function atualizar(int $id, array $campos): bool
     {
+
+        $alteracoes = [];
+        $parametros = ["id" => $id];
+
+        if (array_key_exists("nome", $campos)) {
+            $alteracoes[] = "nome = :nome";
+            $parametros["nome"] = $campos["nome"];
+        }
+
+        if (array_key_exists("preco", $campos)) {
+            $alteracoes[] = "preco = :preco";
+            $parametros["preco"] = $campos["preco"];
+        }
+
+        if (array_key_exists("quantidade", $campos)) {
+            $alteracoes[] = "quantidade = :quantidade";
+            $parametros["quantidade"] = $campos["quantidade"];
+        }
+
+        /*
+        O SET da forma que está montado
+        junta os elementos do array $alteracoes separando-os por vírgula e espaço.
+        monta dinamicamente a cláusula SET do SQL.
+        Ex: ['preco = :preco', 'quantidade = :quantidade'] vira 
+        'preco = :preco, quantidade = :quantidade'*/
         $sql = "UPDATE produtos 
-        SET nome = :nome, 
-            preco = :preco, 
-            quantidade = :quantidade 
+        SET " . implode(", ", $alteracoes) . " 
         WHERE id = :id";
         
         $stmt = $this->pdo->prepare($sql);
 
-        return $stmt->execute([
-            "id" => $id,
-            "nome" => $nome,
-            "preco" => $preco,
-            "quantidade" => $quantidade
-        ]);
+        return $stmt->execute($parametros);
     }
 
     public function excluir(int $id): bool

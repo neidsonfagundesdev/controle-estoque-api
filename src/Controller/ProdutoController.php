@@ -279,12 +279,25 @@ class ProdutoController
             exit;
         }
 
+        //trecho incluido para atualizar apenas o campo enviado
+        $campos = [];
+
+        if (array_key_exists("nome", $dados)) {
+            $campos["nome"] = $nome;
+        }
+
+        if (array_key_exists("preco", $dados)) {
+            $campos["preco"] = $preco;
+        }
+
+        if (array_key_exists("quantidade", $dados)) {
+            $campos["quantidade"] = $quantidade;
+        }
+
         try {
             $produtoAtualizado = $this->service->atualizar(
                 $id,
-                $nome,
-                $preco,
-                $quantidade
+                $campos
             );
 
             if ($produtoAtualizado === null) {

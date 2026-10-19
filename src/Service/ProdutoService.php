@@ -84,43 +84,65 @@ class ProdutoService
     }
 
     //Atualiza o dado no banco
-    public function atualizar(int $id, ?string $nome, int|float|null $preco, ?int $quantidade): ?array
+    public function atualizar(int $id, array $campos): ?array
     {
         $produto = $this->repository->buscarPorId($id);
 
         if ($produto === null) {
             return null;
         }
-        //Coração do PATCH. Se chegou novo nome, use. Se não chegou, use o do banco mesmo.
-        $nomeAtualizado = $nome ?? $produto["nome"];
-        $precoAtualizado = $preco ?? (float) $produto["preco"];
-        $quantidadeAtualizada = $quantidade ?? (int) $produto["quantidade"];
 
-        if ($nomeAtualizado === "") {
-            throw new Exception ("Nome não pode estar vazio.");
+        //Valida o nome
+        if (array_key_exists("nome", $campos)) {
+
+            $campos["nome"] = trim($campos["nome"]);
+
+            if ($campos["nome"] === "") {
+            throw new Exception("Nome não pode estar vazio.");
+            }
+
+            if (strlen($campos["nome"]) > 150) {
+            throw new Exception("Nome deve ter no máximo 150 caracteres.");
+            }
         }
 
-        if ($precoAtualizado <= 0) {
-            throw new Exception ("Preço deve ser maior do que zero.");
+        //Valida o preço
+        if (array_key_exists("preco", $campos)) {
+
+            if ($campos["preco"] <= 0) {
+                throw new Exception("Preço deve ser maior do que zero.");
+            }
+
+            if (!is_finite($campos["preco"])) {
+                throw new Exception("Preço inválido");
+            }
+
+            if ($campos["preco"] > 99999999.99) {
+                throw new Exception("Preço excede o limite permitido.");
+            }
+
+            $centavos = $campos["preco"] *100;
+
+            if (abs($centavos - round($centavos)) > 0.000001) {
+                throw new Exception("Preço deve ter no máximo 2 casas decimais.");
+            }
         }
 
-        if ($quantidadeAtualizada < 0) {
-            throw new Exception ("Quantidade não pode ser negativa.");
+        //Valida a quantidade
+        if (array_key_exists("quantidade", $campos)) {
+            
+            if ($campos["quantidade"] < 0) {
+                throw new Exception("Quantidade não pode ser negativa.");
+            }
+
+            if ($campos["quantidade"] > 2147483647) {
+                throw new Exception("Quantidade excede o limite permitido.");
+            }
         }
 
-        $this->repository->atualizar(
-            $id,
-            $nomeAtualizado,
-            $precoAtualizado,
-            $quantidadeAtualizada
-        );
+        $this->repository->atualizar($id, $campos);
 
-        return [
-            "id" => $id,
-            "nome" => $nomeAtualizado,
-            "preco" => $precoAtualizado,
-            "quantidade" => $quantidadeAtualizada
-        ];
+        return $this->repository->buscarPorId($id);
     }
 
     //Exclui um item pelo id
