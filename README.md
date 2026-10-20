@@ -4,6 +4,22 @@ API RESTful desenvolvida em PHP para gerenciamento de produtos em estoque.
 
 O projeto permite cadastrar, listar, buscar, atualizar e excluir produtos, utilizando PHP, MySQL, PDO e arquitetura separada em Controller, Service e Repository.
 
+A aplicação está publicada em produção no Railway, utilizando uma instância MySQL também hospedada na plataforma.
+
+## API publicada
+
+A API está disponível em produção em:
+
+https://controle-estoque-api-production.up.railway.app
+
+Exemplo de endpoint:
+
+```http
+GET https://controle-estoque-api-production.up.railway.app/produtos
+```
+
+> A URL raiz da aplicação não possui uma rota definida. Utilize os endpoints documentados abaixo.
+
 ## Tecnologias utilizadas
 
 - PHP
@@ -12,6 +28,8 @@ O projeto permite cadastrar, listar, buscar, atualizar e excluir produtos, utili
 - API REST
 - JSON
 - Git
+- Composer
+- Railway
 - Thunder Client
 
 ## Funcionalidades
@@ -25,9 +43,11 @@ A API permite:
 - Excluir produtos
 - Validar os dados enviados pelo cliente
 - Retornar códigos HTTP apropriados
+- Tratar JSON inválido
 - Tratar rotas inexistentes
 - Tratar métodos HTTP não permitidos
 - Tratar erros internos sem expor detalhes do banco de dados
+- Registrar erros internos no log do servidor
 
 ## Estrutura do projeto
 
@@ -52,6 +72,7 @@ controle-estoque-api/
 │       └── ProdutoService.php
 │
 ├── .gitignore
+├── composer.json
 ├── schema.sql
 └── README.md
 ```
@@ -92,32 +113,46 @@ MySQL
 
 O projeto utiliza MySQL.
 
-A estrutura necessária está disponível no arquivo:
+A estrutura utilizada localmente está disponível no arquivo:
 
 ```text
 schema.sql
 ```
 
-O banco possui a tabela `produtos` com os seguintes campos:
+A tabela `produtos` possui os seguintes campos:
 
 | Campo | Tipo | Descrição |
 |---|---|---|
-| id | INT | Identificador do produto |
+| id | INT AUTO_INCREMENT | Identificador do produto |
 | nome | VARCHAR(150) | Nome do produto |
 | preco | DECIMAL(10,2) | Preço do produto |
 | quantidade | INT | Quantidade disponível |
+
+Estrutura da tabela:
+
+```sql
+CREATE TABLE IF NOT EXISTS produtos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL,
+    preco DECIMAL(10,2) NOT NULL,
+    quantidade INT NOT NULL
+);
+```
 
 ## Pré-requisitos
 
 Para executar o projeto localmente, é necessário ter:
 
-- PHP 8.0 ou superior
-- Extensão PHP `mbstring` habilitada
-- PHP com suporte ao PDO MySQL
+- PHP 8.2 ou superior
+- Extensão PHP `mbstring`
+- Extensão PHP `PDO`
+- Extensão PHP `pdo_mysql`
 - MySQL ou MariaDB
-- Git, caso queira clonar o repositório
+- Git
 
-### Habilitando a extensão mbstring
+As dependências necessárias ao ambiente PHP também estão declaradas no arquivo `composer.json`.
+
+## Habilitando a extensão mbstring
 
 A API utiliza `mb_strlen()` para contar corretamente caracteres UTF-8, incluindo letras acentuadas.
 
@@ -133,7 +168,7 @@ Caso a linha esteja assim:
 ;extension=mbstring
 ```
 
-remova o `;`, salve o arquivo e reinicie o servidor PHP.
+remova o `;`, salve o arquivo e reinicie o PHP.
 
 Para confirmar se a extensão está carregada:
 
@@ -141,7 +176,7 @@ Para confirmar se a extensão está carregada:
 php -m
 ```
 
-## Configuração
+## Configuração local
 
 Clone o repositório:
 
@@ -155,36 +190,53 @@ Entre na pasta do projeto:
 cd controle-estoque-api
 ```
 
-Crie o banco de dados executando o arquivo:
+Crie o banco de dados local utilizando o arquivo:
 
 ```text
 schema.sql
 ```
 
-Depois copie:
+Por padrão, a configuração local utiliza:
 
 ```text
-config/database.example.php
+Host: localhost
+Porta: 3306
+Banco: controle_estoque
+Usuário: root
+Senha: vazia
 ```
 
-para:
+O arquivo `config/database.php` também permite utilizar variáveis de ambiente.
+
+As variáveis utilizadas são:
 
 ```text
-config/database.php
+MYSQLHOST
+MYSQLPORT
+MYSQLDATABASE
+MYSQLUSER
+MYSQLPASSWORD
 ```
 
-Informe os dados da sua conexão com o MySQL:
+Quando essas variáveis não existem no ambiente local, a aplicação utiliza os valores locais padrão.
+
+## Variáveis de ambiente
+
+Em produção, as credenciais do banco não ficam escritas diretamente no código.
+
+A aplicação utiliza:
 
 ```php
-$host = "localhost";
-$banco = "controle_estoque";
-$usuario = "SEU_USUARIO";
-$senha = "SUA_SENHA";
+getenv("MYSQLHOST");
+getenv("MYSQLPORT");
+getenv("MYSQLDATABASE");
+getenv("MYSQLUSER");
+getenv("MYSQLPASSWORD");
 ```
 
-O arquivo `database.php` não é enviado ao GitHub porque está incluído no `.gitignore`.
+Isso permite utilizar credenciais fornecidas pelo ambiente de execução sem armazenar senhas no repositório.
 
-## Executando a aplicação
+## Executando a aplicação localmente
 
 Na raiz do projeto, execute:
 
@@ -196,6 +248,12 @@ A API ficará disponível em:
 
 ```text
 http://localhost:8000
+```
+
+Exemplo:
+
+```http
+GET http://localhost:8000/produtos
 ```
 
 ## Endpoints
@@ -225,7 +283,7 @@ Exemplo de resposta:
 GET /produtos/1
 ```
 
-Exemplo de resposta:
+Exemplo:
 
 ```json
 {
@@ -293,7 +351,7 @@ Exemplo:
 }
 ```
 
-Os outros dados do produto permanecem inalterados.
+Os demais dados do produto permanecem inalterados.
 
 Exemplo de resposta:
 
@@ -364,7 +422,7 @@ Entre elas:
 
 ## Atualização parcial com PATCH
 
-O endpoint `PATCH` atualiza apenas os campos enviados na requisição.
+O endpoint `PATCH` atualiza somente os campos enviados pelo cliente.
 
 Por exemplo:
 
@@ -374,7 +432,7 @@ Por exemplo:
 }
 ```
 
-Nesse caso, apenas a quantidade é alterada.
+Nesse caso, somente a quantidade é alterada.
 
 Os campos `nome` e `preco` permanecem com seus valores atuais.
 
@@ -396,13 +454,22 @@ Isso evita concatenar diretamente os dados recebidos nas consultas SQL e ajuda n
 
 No `PATCH`, as colunas permitidas são definidas pela própria aplicação e os valores são enviados separadamente através dos parâmetros da consulta.
 
-As credenciais locais do banco também não são versionadas no Git.
+As credenciais do banco de produção são fornecidas através de variáveis de ambiente e não são armazenadas diretamente no código.
 
-Erros internos retornam mensagens genéricas ao cliente, evitando expor informações como SQL, credenciais, caminhos internos ou detalhes da conexão com o banco.
+Erros internos retornam mensagens genéricas ao cliente, evitando expor:
+
+- SQL
+- credenciais
+- caminhos internos
+- detalhes da conexão com o banco
+
+Os detalhes técnicos das exceções do PDO são registrados internamente utilizando:
+
+```php
+error_log($erro->getMessage());
+```
 
 ## Tratamento de erros
-
-A API utiliza respostas JSON para informar erros ao cliente.
 
 Exemplo de dado inválido:
 
@@ -428,6 +495,69 @@ Exemplo de erro interno:
 }
 ```
 
+## Deploy
+
+A aplicação está hospedada no Railway.
+
+A infraestrutura de produção utiliza:
+
+```text
+Internet
+   ↓
+Railway
+   ↓
+API PHP
+   ↓
+PDO
+   ↓
+MySQL
+```
+
+O serviço PHP utiliza o diretório:
+
+```text
+public/
+```
+
+como raiz pública da aplicação.
+
+No Railway, foi configurada a variável:
+
+```text
+RAILPACK_PHP_ROOT_DIR=/app/public
+```
+
+O banco MySQL é executado em um serviço separado dentro do mesmo projeto e a aplicação acessa suas credenciais por variáveis de ambiente.
+
+## Testes realizados
+
+Os principais fluxos foram testados tanto no ambiente local quanto em produção.
+
+Foram validados:
+
+```text
+GET    /produtos
+POST   /produtos
+GET    /produtos/{id}
+PATCH  /produtos/{id}
+DELETE /produtos/{id}
+```
+
+Também foram testados:
+
+- JSON malformado
+- Dados com tipos inválidos
+- Limites de preço
+- Limites de quantidade
+- Nomes UTF-8
+- Produtos inexistentes
+- Rotas inexistentes
+- Métodos HTTP não permitidos
+- Falhas de conexão com o banco
+- Tentativas de SQL Injection
+- Atualizações parciais
+- Exclusão repetida do mesmo produto
+
 ## Objetivo do projeto
 
 Projeto desenvolvido para praticar conceitos de desenvolvimento back-end, incluindo:
@@ -442,12 +572,28 @@ Projeto desenvolvido para praticar conceitos de desenvolvimento back-end, inclui
 - MySQL
 - Prepared Statements
 - SQL Injection
-- Tratamento de erros
+- Tratamento de exceções
+- Logs de erros
 - Validação de JSON
 - Codificação UTF-8
+- Variáveis de ambiente
 - Separação de responsabilidades
 - Arquitetura Controller / Service / Repository
-- Git e versionamento de código
+- Git
+- Versionamento de código
+- Versionamento semântico
+- Deploy
+- Banco de dados em nuvem
+
+## Versões
+
+### v1.0.0
+
+Primeira versão estável da API, contendo o CRUD completo, validações, tratamento de erros e arquitetura em camadas.
+
+### v1.0.1
+
+Versão preparada para execução em produção, com configuração para variáveis de ambiente e deploy no Railway.
 
 ## Autor
 
